@@ -1,0 +1,6 @@
+*.engine
+*.mp4
+*.onnx
+*.pt
+*.so
+peoplenet
