@@ -89,8 +89,11 @@ typedef enum
 #endif
 /** @} */
 
-/* PERSON ID definition. */
-#define PERSON_ID 0
+#define BUS 0
+#define CAR 1
+#define MOTOBIKE 2
+#define TRUCK 3
+
 
 #ifdef EN_DEBUG
 #define LOGD(...) printf(__VA_ARGS__)
@@ -404,8 +407,8 @@ generate_event_msg_meta (gpointer data, gint class_id, gboolean useTs,
 
     (void) ts_generated;
     meta->type = NVDS_EVENT_ENTRY;
-    meta->objType = NVDS_OBJECT_TYPE_PERSON;
-    meta->objClassId = PERSON_ID;
+    // meta->objType = NVDS_OBJECT_TYPE_PERSON;
+    meta->objClassId = class_id;
     meta->occupancy = obj_params->lccum_cnt;
     meta->lccum_cnt_entry = obj_params->lcc_cnt_entry;
     meta->lccum_cnt_exit = obj_params->lcc_cnt_exit ;
@@ -478,7 +481,6 @@ bbox_generated_probe_after_analytics (AppCtx * appCtx, GstBuffer * buf,
 	    /* Now using above information we need to form a text that should
 	     * be displayed on top of the bounding box, so lets form it here. */
 	    obj_meta = (NvDsObjectMeta *) (l->data);
-
 	    {
 		/**
 		 * Enable only if this callback is after tiler
@@ -499,6 +501,30 @@ bbox_generated_probe_after_analytics (AppCtx * appCtx, GstBuffer * buf,
 		    g_print ("invalid pipeline params\n");
 		    return;
 		}
+		if (obj_meta->class_id == BUS) {
+			obj_meta->rect_params.border_color.red = 0.5;
+			obj_meta->rect_params.border_color.green = 0.5;
+			obj_meta->rect_params.border_color.blue = 0;
+			obj_meta->rect_params.border_color.alpha = 1;
+		}
+		if (obj_meta->class_id == MOTOBIKE) {
+			obj_meta->rect_params.border_color.red = 0;
+			obj_meta->rect_params.border_color.green = 0;
+			obj_meta->rect_params.border_color.blue = 1;
+			obj_meta->rect_params.border_color.alpha = 1;
+		}
+		if (obj_meta->class_id == CAR) {
+			obj_meta->rect_params.border_color.red = 1;
+			obj_meta->rect_params.border_color.green = 0;
+			obj_meta->rect_params.border_color.blue = 0;
+			obj_meta->rect_params.border_color.alpha = 1;
+		}
+		if (obj_meta->class_id == TRUCK) {
+			obj_meta->rect_params.border_color.red = 0;
+			obj_meta->rect_params.border_color.green = 1;
+			obj_meta->rect_params.border_color.blue = 1;
+			obj_meta->rect_params.border_color.alpha = 1;
+		}
 		LOGD ("stream %d==%d [%d X %d]\n", frame_meta->source_id,
 			frame_meta->pad_index, frame_meta->source_frame_width,
 			frame_meta->source_frame_height);
@@ -518,7 +544,7 @@ bbox_generated_probe_after_analytics (AppCtx * appCtx, GstBuffer * buf,
 		/** Generate NvDsEventMsgMeta for every object */
 		NvDsEventMsgMeta *msg_meta =
 		    (NvDsEventMsgMeta *) g_malloc0 (sizeof (NvDsEventMsgMeta));
-		generate_event_msg_meta (msg_meta, PERSON_ID, TRUE,
+		generate_event_msg_meta (msg_meta, obj_meta->class_id, TRUE,
 			/**< useTs NOTE: Pass FALSE for files without base-timestamp in URI */
 			buffer_pts,
 			appCtx->config.multi_source_config[stream_id].uri, stream_id,

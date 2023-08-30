@@ -66,8 +66,8 @@ class-id=-1
 [line-crossing-stream-0]
 enable=1
 #Label;direction;lc
-line-crossing-Exit=300;229;360;229;330;153;330;305;
-line-crossing-Entry=360;70;300;70;330;27;330;120
+line-crossing-Exit=300;229;360;229;330;100;330;380;
+#line-crossing-Entry=360;70;300;70;330;27;330;120
 #line_color=0.75;0.25;0;1
 class-id=-1
 #extended when 0- only counts crossing on the configured Line

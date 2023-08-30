@@ -107,3 +107,8 @@ docker run -it --rm --name dev --net=host -e DISPLAY=$DISPLAY --device /dev/vide
 ## This is for test gstreamer
   apt update && apt install gstreamer1.0-x
 gst-launch-1.0 v4l2src device="/dev/video0" ! 'video/x-raw, width=640, height=480' ! videoconvert ! 'video/x-raw, width=640, height=480, format=(string)YUY2' ! xvimagesink
+
+## Note for edit code
+- To change bbox color we have some way:
+  1.  Modify nvinfer code: Set bbox color in metadata. obj_meta->rect_params.border_color.red = 1 (0 to 1)
+  2.  Edit in config file (Sometime this not working)
