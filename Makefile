@@ -1,5 +1,5 @@
 ################################################################################
-# Copyright (c) 2019-2020, NVIDIA CORPORATION. All rights reserved.
+# Copyright (c) 2019-2022, NVIDIA CORPORATION. All rights reserved.
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -20,56 +20,58 @@
 # DEALINGS IN THE SOFTWARE.
 ################################################################################
 
-CUDA_VER=11.4
+CUDA_VER?=
 ifeq ($(CUDA_VER),)
   $(error "CUDA_VER is not set")
 endif
 
-APP:= deepstream-test5-analytics
+APP:= deepstream-test5-app
 
 TARGET_DEVICE = $(shell gcc -dumpmachine | cut -f1 -d -)
-DS_VER = $(shell deepstream-app -v | awk '$$1~/DeepStreamSDK/ {print substr($$2,1,3)}' )
 
-LIB_INSTALL_DIR?=/opt/nvidia/deepstream/deepstream-$(DS_VER)/lib/
-APP_INSTALL_DIR?=/opt/nvidia/deepstream/deepstream-$(DS_VER)/bin/
+NVDS_VERSION:=6.2
+
+LIB_INSTALL_DIR?=/opt/nvidia/deepstream/deepstream-$(NVDS_VERSION)/lib/
+APP_INSTALL_DIR?=/opt/nvidia/deepstream/deepstream-$(NVDS_VERSION)/bin/
 
 ifeq ($(TARGET_DEVICE),aarch64)
   CFLAGS:= -DPLATFORM_TEGRA
 endif
 
-SRCS:= deepstream_test5_app_main.c
-SRCS+= ../deepstream-test5/deepstream_utc.c
+SRCS:= deepstream_test5_app_main.c deepstream_utc.c
 SRCS+= ../deepstream-app/deepstream_app.c ../deepstream-app/deepstream_app_config_parser.c
+SRCS+= ../deepstream-app/deepstream_app_config_parser_yaml.cpp
 SRCS+= $(wildcard ../../apps-common/src/*.c)
+SRCS+= $(wildcard ../../apps-common/src/deepstream-yaml/*.cpp)
 
-INCS= $(wildcard *.h)
-INC_DIR=../deepstream-test5
+INCS:= $(wildcard *.h)
 
 PKGS:= gstreamer-1.0 gstreamer-video-1.0 x11 json-glib-1.0
 
 OBJS:= $(SRCS:.c=.o)
-OBJS+= deepstream_nvdsanalytics_meta.o
+OBJS:= $(OBJS:.cpp=.o)
 
-CFLAGS+= -I../../apps-common/includes -I./includes -I../../../includes -I../deepstream-app/ -DDS_VERSION_MINOR=1 -DDS_VERSION_MAJOR=5
-CFLAGS+= -I$(INC_DIR)
-CFLAGS+= -I/usr/local/cuda-$(CUDA_VER)/include
+CFLAGS+= -I../../apps-common/includes \
+		 -I../../../includes \
+		 -I../deepstream-app/ -DDS_VERSION_MINOR=0 -DDS_VERSION_MAJOR=5 \
+		 -I /usr/local/cuda-$(CUDA_VER)/include
 
-LIBS+= -L$(LIB_INSTALL_DIR) -lnvdsgst_meta -lnvds_meta -lnvdsgst_helper \
-       -lnvdsgst_customhelper -lnvdsgst_smartrecord -lnvds_utils -lnvds_msgbroker -lm \
-       -lgstrtspserver-1.0 -ldl -Wl,-rpath,$(LIB_INSTALL_DIR)
-LIBS+= -L/usr/local/cuda-$(CUDA_VER)/lib64/ -lcudart
+LIBS:= -L/usr/local/cuda-$(CUDA_VER)/lib64/ -lcudart
 
-CFLAGS+= `pkg-config --cflags $(PKGS)`
+LIBS+= -L$(LIB_INSTALL_DIR) -lnvdsgst_meta -lnvds_meta -lnvdsgst_helper -lnvdsgst_customhelper -lnvdsgst_smartrecord -lnvds_utils -lnvds_msgbroker -lm \
+       -lyaml-cpp -lcuda -lgstrtspserver-1.0 -ldl -Wl,-rpath,$(LIB_INSTALL_DIR)
 
-LIBS+= `pkg-config --libs $(PKGS)`
+CFLAGS+= $(shell pkg-config --cflags $(PKGS))
+
+LIBS+= $(shell pkg-config --libs $(PKGS))
 
 all: $(APP)
 
-deepstream_nvdsanalytics_meta.o: deepstream_nvdsanalytics_meta.cpp $(INCS) Makefile
-	$(CXX) -c -o $@ -Wall -Werror $(CFLAGS) $<
-
 %.o: %.c $(INCS) Makefile
-	$(CC) -c -o $@  $(CFLAGS) $<
+	$(CC) -c -o $@ $(CFLAGS) $<
+
+%.o: %.cpp $(INCS) Makefile
+	$(CXX) -c -o $@ $(CFLAGS) $<
 
 $(APP): $(OBJS) Makefile
 	$(CXX) -o $(APP) $(OBJS) $(LIBS)

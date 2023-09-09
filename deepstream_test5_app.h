@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, NVIDIA CORPORATION. All rights reserved.
+ * Copyright (c) 2019-2020, NVIDIA CORPORATION. All rights reserved.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -20,36 +20,29 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
+#ifndef __DEEPSTREAM_TEST5_APP_H__
+#define __DEEPSTREAM_TEST5_APP_H__
+
 #include <gst/gst.h>
-#include <glib.h>
-#include <iostream>
-#include <vector>
-#include <unordered_map>
-#include <sstream>
-#include "gstnvdsmeta.h"
-#include "nvds_analytics_meta.h"
-#include "analytics.h"
+#include "deepstream_config.h"
 
-/* custom_parse_nvdsanalytics_meta_data 
- * and extract nvanalytics metadata */
-	extern "C" void
-analytics_custom_parse_nvdsanalytics_meta_data (NvDsMetaList *l_user, AnalyticsUserMeta *data)
+typedef struct
 {
-	std::stringstream out_string;
-	NvDsUserMeta *user_meta = (NvDsUserMeta *) l_user->data;
-	/* convert to  metadata */
-	NvDsAnalyticsFrameMeta *meta =
-		(NvDsAnalyticsFrameMeta *) user_meta->user_meta_data;
-	/* Fill the data for entry, exit,occupancy */
-	data->lcc_cnt_entry = 0;
-	data->lcc_cnt_exit = 0;
-	data->lccum_cnt = 0;
-	data->lcc_cnt_entry = meta->objLCCumCnt["Entry"];
-	data->lcc_cnt_exit = meta->objLCCumCnt["Exit"];
+  gint anomaly_count;
+  gint meta_number;
+  struct timespec timespec_first_frame;
+  GstClockTime gst_ts_first_frame;
+  GMutex lock_stream_rtcp_sr;
+  guint32 id;
+  gint frameCount;
+  GstClockTime last_ntp_time;
+} StreamSourceInfo;
 
-	if (meta->objLCCumCnt["Entry"]> meta->objLCCumCnt["Exit"])
-		data->lccum_cnt = meta->objLCCumCnt["Entry"] - meta->objLCCumCnt["Exit"];
-	// g_print("Enter: %d, Exit: %d\n", data->lcc_cnt_entry,data->lcc_cnt_exit);
-}
+typedef struct
+{
+  StreamSourceInfo streams[MAX_SOURCE_BINS];
+} TestAppCtx;
 
+struct timespec extract_utc_from_uri (gchar * uri);
 
+#endif /**< __DEEPSTREAM_TEST5_APP_H__ */

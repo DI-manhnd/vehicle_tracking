@@ -49,7 +49,7 @@ camera-width=640
 camera-height=480
 camera-fps-n=30
 camera-fps-d=1
-camera-v4l2-dev-node=0
+camera-v4l2-dev-node=2
 cudadec-memtype=0
 #smart record specific fields, valid only for source type=4
 # 0 = disable, 1 = through cloud events, 2 = through cloud + local events
@@ -58,6 +58,16 @@ smart-record=2
 smart-rec-start-time=1
 smart-rec-file-prefix=smart_record
 smart-rec-cache=10
+
+
+[source1]
+enable=0
+type=3
+uri=file://../morning_12.mp4
+num-sources=1
+gpu-id=0
+cudadec-memtype=0
+
 
 [sink0]
 enable=1
@@ -70,49 +80,29 @@ gpu-id=0
 nvbuf-memory-type=0
 #overlay-id=1
 
-#[sink1]
-#enable=1
-##Type - 1=FakeSink 2=EglSink 3=File 4=UDPSink 5=nvoverlaysink 6=MsgConvBroker
-#type=6
-#msg-conv-config=msgconv_sample_config.txt
-## Name of library having custom implementation.
-#msg-conv-msg2p-lib=/opt/nvidia/deepstream/deepstream/sources/apps/sample_apps/deepstream-occupancy-analytics/bin/jetson/libnvds_msgconv.so
-## msg-conv-msg2p-lib=/opt/nvidia/deepstream/deepstream/sources/apps/sample_apps/deepstream-occupancy-analytics/bin/x86/libnvds_msgconv.so
-##(0): PAYLOAD_DEEPSTREAM - Deepstream schema payload
-##(1): PAYLOAD_DEEPSTREAM_MINIMAL - Deepstream schema payload minimal
-##(256): PAYLOAD_RESERVED - Reserved type
-##(257): PAYLOAD_CUSTOM   - Custom schema payload
-#msg-conv-payload-type=0
-#msg-broker-proto-lib=/opt/nvidia/deepstream/deepstream/lib/libnvds_kafka_proto.so
-##Provide your msg-broker-conn-str here
-#msg-broker-conn-str=localhost;9092;quickstart-events
-##topic=<topic>
-##Optional:
-##msg-broker-config=../../deepstream-test4/cfg_kafka.txt
-
-# sink type = 6 by default creates msg converter + broker.
-# To use multiple brokers use this group for converter and use
-# sink type = 6 with disable-msgconv = 1
-[message-converter]
-enable=0
+[sink1]
+enable=1
+#Type - 1=FakeSink 2=EglSink 3=File 4=UDPSink 5=nvoverlaysink 6=MsgConvBroker
+type=6
 msg-conv-config=msgconv_sample_config.txt
+# Name of library having custom implementation.
+# msg-conv-msg2p-lib=/opt/nvidia/deepstream/deepstream/sources/apps/sample_apps/deepstream-occupancy-analytics/bin/jetson/libnvds_msgconv.so
+msg-conv-msg2p-lib=/opt/nvidia/deepstream/deepstream/sources/apps/sample_apps/vehicle_tracking/bin/x86/libnvds_msgconv.so
 #(0): PAYLOAD_DEEPSTREAM - Deepstream schema payload
 #(1): PAYLOAD_DEEPSTREAM_MINIMAL - Deepstream schema payload minimal
 #(256): PAYLOAD_RESERVED - Reserved type
 #(257): PAYLOAD_CUSTOM   - Custom schema payload
-msg-conv-payload-type=0
-# Id of component in case only selected message to parse.
-#msg-conv-comp-id=<val>
+msg-conv-payload-type=1
+msg-broker-proto-lib=/opt/nvidia/deepstream/deepstream/lib/libnvds_kafka_proto.so
+msg-broker-conn-str=192.168.1.108;9092;demo
 
-# Configure this group to enable cloud message consumer.
 [message-consumer0]
 enable=0
 proto-lib=/opt/nvidia/deepstream/deepstream/lib/libnvds_kafka_proto.so
-conn-str=localhost;9092
+conn-str=192.168.1.108;9092
 #config-file=<broker config file e.g. cfg_kafka.txt>
-subscribe-topic-list=quickstart-events
+subscribe-topic-list=demo
 # Use this option if message has sensor name as id instead of index (0,1,2 etc.).
-sensor-list-file=msgconv_sample_config.txt
 
 [osd]
 enable=1
