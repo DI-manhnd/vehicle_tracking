@@ -29,7 +29,7 @@ class MessageProducer:
             return ex
 
 
-broker = "192.168.1.108:9092"
+broker = "192.168.1.114:9092"
 topic = "Face"
 message_producer = MessageProducer(broker, topic)
 

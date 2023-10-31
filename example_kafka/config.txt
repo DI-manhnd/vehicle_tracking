@@ -1,6 +1,10 @@
-account_name=didemoiotstorage
-account_key=UZB006ssHPOBlbNhhIsWhB4tUJkXdpzXCJJMPgKA/qLTkH7lvYcakh5NV1Cktws9KUZaGZ3XDCgw+AStbRd8kw==
-container_name=demo
-broker=192.168.1.108:9092
+#account_name=didemoiotstorage
+#account_key=UZB006ssHPOBlbNhhIsWhB4tUJkXdpzXCJJMPgKA/qLTkH7lvYcakh5NV1Cktws9KUZaGZ3XDCgw+AStbRd8kw==
+account_name=adls2iot
+account_key=ehHp5e/dKBAOgwJD2cm1OO9qVykluhXy33tg/AJ5kdrg5pjzfqzDoTVbJRaOULipE03hHgQk4nGN+AStdgWi9A==
+container_name=iot-datalake
+broker=192.168.1.114:9092
 topic=demo
 line-crossing=330;100;330;380
+send_time_interval=60
+start_time=16:30

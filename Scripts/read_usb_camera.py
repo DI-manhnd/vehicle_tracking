@@ -39,7 +39,7 @@ while (total < 10000):
                         if (class_ == 0):
                             name_to_save += "bus"
                         if (class_ == 3):
-                            name_to_save += "truck"
+                            name_to_save += "train"
                         save = True
         if (have_truck_bus):
             count_bus_truck += 1
