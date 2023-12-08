@@ -29,10 +29,10 @@ class MessageConsumer:
         "bus": 0,
         "car": 0,
         "motobike": 0,
-        "truck": 0,
         "train": 0,
     }  # This is counter for objects. If the object start from left of line to the right of line then it will plus 1
-    last_id_train = ""
+    last_has_train = False
+    count_confirm_no_train = 60
     line_crossing = []
     # This is checking time for sending to cloud
     send_time_interval = 0
@@ -40,6 +40,7 @@ class MessageConsumer:
     is_send_to_cloud = False
     start_time = 0
     sent_count = 0
+    diff_time = 0
 
     def __init__(self, config_path):
         # Read lines from file txt
@@ -66,8 +67,10 @@ class MessageConsumer:
             elif key == "send_time_interval":
                 self.send_time_interval = int(value)
             elif key == "start_time":
-                hour, minus = value.split(":")
-                self.start_time = int(hour) * 60 + int(minus)
+                year, month, day, hour, minute = value.split(".")
+                self.start_time = datetime.datetime(int(year), int(month), int(day), int(hour), int(minute))
+            elif key == "diff_time":
+                self.diff_time = int(value)
 
     # This function check if the ceneter of object is in the left side of line
     def is_left_of_line(self, object_bbox, line):
@@ -90,14 +93,18 @@ class MessageConsumer:
         )
 
     def is_in_time(self, deepstream_message_time):
+        date = deepstream_message_time[0:10]
+        year, month, day = date.split("-")
         time = deepstream_message_time[11:16]
-        hour, minus = time.split(":")
-        message_time_in_minus = int(hour) * 60 + int(minus)
-        if message_time_in_minus > self.start_time:
-            if message_time_in_minus < message_time_in_minus + self.send_time_interval:
+        hour, minute = time.split(":")
+        current_time_message = datetime.datetime(int(year), int(month), int(day), int(hour), int(minute))
+        current_time_message = current_time_message + datetime.timedelta(hours=self.diff_time)
+        diff_t = (current_time_message - self.start_time).total_seconds() // 60
+        if diff_t > 0:
+            if diff_t < self.send_time_interval:
                 return True
             else:
-                self.start_time = self.start_time + self.send_time_interval
+                self.start_time = self.start_time + datetime.timedelta(minutes=self.send_time_interval)
                 self.is_send_to_cloud = True
                 return False
 
@@ -106,16 +113,17 @@ class MessageConsumer:
         timestamp = message_json["@timestamp"]
         objects = message_json["objects"]
 
-        print(timestamp)
-
         if self.is_in_time(timestamp):
+            have_train = False
             for object_string in objects:
                 object_id, x1, y1, x2, y2, object_name = object_string.split("|")
                 bbox_object = [float(x1), float(y1), float(x2), float(y2)]
-                # If this is train then count
-                if object_name == "train" and object_id != self.last_id_train:
-                    self.objects_counter[object_name] += 1
-                    self.last_id_train = object_id
+                # Hackly logic for train, because only one train per time
+                if object_name == "train":
+                    have_train = True
+                    if self.last_has_train == False:
+                        self.objects_counter[object_name] += 1
+                    continue
                 if object_id in self.tmp_dict_for_objects:
                     # This logic check if object was exist in left side and now moved to the rights
                     if self.tmp_dict_for_objects[
@@ -131,9 +139,21 @@ class MessageConsumer:
                             first_key = next(iter(self.tmp_dict_for_objects))
                             self.tmp_dict_for_objects.pop(first_key)
                         self.tmp_dict_for_objects[object_id] = 0
+            if have_train == False and self.last_has_train == True:
+                self.count_confirm_no_train -= 1
+            if have_train == True:
+                self.last_has_train = True
+                self.count_confirm_no_train = 60
+
+            if self.count_confirm_no_train == 0:
+                self.last_has_train = False
+                self.count_confirm_no_train = 60
+        print(self.objects_counter)
 
     def append_data_to_blob(self):
         if (self.is_send_to_cloud):
+            now = datetime.datetime.now()
+            current_time = now.strftime("%d_%m_%Y_%H_%M_%S")
             name_to_save = current_time + ".json"
             data = {
                 "bus" : str(self.objects_counter["bus"]),
@@ -145,26 +165,26 @@ class MessageConsumer:
 
             data = datetime_enc.encode(data)
 
-            service = AppendBlobService(
-                account_name=self.account_name, account_key=self.account_key
-            )
-            service.create_blob(
-                container_name=self.container_name, blob_name=name_to_save
-            )
-            service.append_blob_from_text(
-                container_name=self.container_name,
-                blob_name=name_to_save,
-                text=data,
-            )
+            # service = AppendBlobService(
+            #     account_name=self.account_name, account_key=self.account_key
+            # )
+            # service.create_blob(
+            #     container_name=self.container_name, blob_name=name_to_save
+            # )
+            # service.append_blob_from_text(
+            #     container_name=self.container_name,
+            #     blob_name=name_to_save,
+            #     text=data,
+            # )
             print(self.objects_counter)
             self.objects_counter = {
                 "bus": 0,
                 "car": 0,
                 "motobike": 0,
-                "truck": 0,
                 "train": 0,
             }  # Recount
             print("Current time: ", current_time, "Data Appended to Blob Successfully.")
+            self.is_send_to_cloud = False
         # else :
             # print(self.objects_counter)
 
@@ -172,7 +192,7 @@ class MessageConsumer:
         consumer = KafkaConsumer(
             bootstrap_servers=self.broker,
             group_id="my-group",
-            consumer_timeout_ms=60000,
+            consumer_timeout_ms=600000,
             auto_offset_reset="earliest",
             enable_auto_commit=False,
             value_deserializer=lambda m: json.loads(m.decode("ascii")),

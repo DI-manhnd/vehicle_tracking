@@ -84,7 +84,7 @@ nvbuf-memory-type=0
 enable=1
 #Type - 1=FakeSink 2=EglSink 3=File 4=UDPSink 5=nvoverlaysink 6=MsgConvBroker
 type=6
-msg-conv-config=msgconv_sample_config.txt
+#msg-conv-config=msgconv_sample_config.txt
 # Name of library having custom implementation.
 msg-conv-msg2p-lib=/opt/nvidia/deepstream/deepstream/sources/apps/sample_apps/vehicle_tracking/bin/jetson/libnvds_msgconv.so
 # msg-conv-msg2p-lib=/opt/nvidia/deepstream/deepstream/sources/apps/sample_apps/vehicle_tracking/bin/x86/libnvds_msgconv.so
@@ -94,7 +94,7 @@ msg-conv-msg2p-lib=/opt/nvidia/deepstream/deepstream/sources/apps/sample_apps/ve
 #(257): PAYLOAD_CUSTOM   - Custom schema payload
 msg-conv-payload-type=1
 msg-broker-proto-lib=/opt/nvidia/deepstream/deepstream/lib/libnvds_kafka_proto.so
-msg-broker-conn-str=192.168.1.114;9092;demo
+msg-broker-conn-str=192.168.1.115;9092;demo
 
 [sink2]
 enable=0
@@ -110,7 +110,7 @@ source-id=0
 [message-consumer0]
 enable=0
 proto-lib=/opt/nvidia/deepstream/deepstream/lib/libnvds_kafka_proto.so
-conn-str=192.168.1.114;9092
+conn-str=192.168.1.115;9092
 #config-file=<broker config file e.g. cfg_kafka.txt>
 subscribe-topic-list=demo
 # Use this option if message has sensor name as id instead of index (0,1,2 etc.).
